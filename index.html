@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gauntlet Tax Filing Assistant</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace" aria-label="Tax filing assistant">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">2025 federal 1040 prototype</p>
+            <h1>Agentic Tax-Filing Assistant</h1>
+          </div>
+          <div class="status-pill" id="statusPill">Waiting for W-2</div>
+        </header>
+
+        <section class="chat-panel" aria-label="Conversation">
+          <div class="messages" id="messages" aria-live="polite"></div>
+
+          <form class="composer" id="chatForm">
+            <label class="sr-only" for="chatInput">Message</label>
+            <textarea id="chatInput" rows="2" placeholder="Reply to the assistant..."></textarea>
+            <button type="submit" title="Send message" aria-label="Send message">
+              <span aria-hidden="true">&rarr;</span>
+            </button>
+          </form>
+        </section>
+      </section>
+
+      <aside class="side-panel" aria-label="Harness controls and observations">
+        <section class="toolbox">
+          <h2>W-2 Input</h2>
+          <div class="button-row">
+            <button id="loadDemoW2" type="button">Load fake W-2</button>
+            <button id="resetSession" type="button">Reset</button>
+          </div>
+          <label for="w2Text">Paste W-2 JSON or simple key/value text</label>
+          <textarea id="w2Text" rows="8" spellcheck="false"></textarea>
+          <button id="parseW2" type="button">Parse W-2</button>
+        </section>
+
+        <section class="summary">
+          <h2>Return Summary</h2>
+          <dl id="summaryList"></dl>
+          <button id="downloadReturn" type="button" disabled>Download 1040</button>
+        </section>
+
+        <section class="observations">
+          <h2>Observation Trail</h2>
+          <ol id="observationList"></ol>
+        </section>
+      </aside>
+    </main>
+
+    <script src="./vendor/pdf-lib.min.js"></script>
+    <script src="./src/app.js"></script>
+  </body>
+</html>
