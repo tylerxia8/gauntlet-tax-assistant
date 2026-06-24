@@ -6,6 +6,7 @@ A small static web app for the Gauntlet hackathon challenge: a web-based chat th
 
 - App: `https://tylerxia8.github.io/gauntlet-tax-assistant/`
 - Source: `https://github.com/tylerxia8/gauntlet-tax-assistant`
+- Render one-click: [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/tylerxia8/gauntlet-tax-assistant/tree/master)
 
 ## Quick Demo
 
@@ -78,6 +79,14 @@ This can be deployed as a static site. On Render, create a **Static Site** with:
 The app uses `vendor/pdf-lib.min.js` and `assets/f1040-2025.pdf` at runtime, so no server process is required.
 
 The included `render.yaml` captures the same static deployment settings.
+
+For API-based creation, run:
+
+```sh
+powershell -ExecutionPolicy Bypass -File ./scripts/deploy-render.ps1 -ApiKey "$RENDER_API_KEY"
+```
+
+If `-OwnerId` is omitted, the script uses the first Render workspace returned by the API key.
 
 ## Scope
 
