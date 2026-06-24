@@ -2,6 +2,11 @@
 
 A small static web app for the Gauntlet hackathon challenge: a web-based chat that turns a fake 2025 W-2 into a downloadable educational 2025 IRS Form 1040 PDF.
 
+## Live Demo
+
+- App: `https://tylerxia8.github.io/gauntlet-tax-assistant/`
+- Source: `https://github.com/tylerxia8/gauntlet-tax-assistant`
+
 ## Local Run
 
 Serve the folder:
