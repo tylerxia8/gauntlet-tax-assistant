@@ -466,6 +466,16 @@ function handleUserMessage(text) {
   observe("chat.user", `Received reply during ${state.phase}.`);
 
   try {
+    if (applyCorrection(normalized)) {
+      if (state.result) {
+        recomputeCompletedReturn();
+      } else {
+        nextPrompt();
+      }
+      renderSummary();
+      return;
+    }
+
     if (state.phase === "need_w2") {
       addMessage("guardrail", "Please load or paste a fake W-2 first. I need that source document before asking tax questions.");
       observe("guardrail.sequence", "Blocked chat answer before W-2 was parsed.");
@@ -499,6 +509,74 @@ function handleUserMessage(text) {
     addMessage("guardrail", `${error.message}\nCould you send that again in the simple format I asked for?`);
   }
   renderSummary();
+}
+
+function applyCorrection(text) {
+  if (!/^(change|update|correct|set)\b/i.test(text)) return false;
+  if (!state.w2) throw new Error("Please load or paste a fake W-2 before correcting return answers.");
+
+  const value = text.replace(/^(change|update|correct|set)\s+/i, "").trim();
+  if (/^(filing\s+status|status)\b/i.test(value)) {
+    const statusText = value.replace(/^(filing\s+status|status)\s*(to)?\s*/i, "");
+    const status = parseFilingStatus(statusText);
+    state.answers.filingStatus = status;
+    if (status === "married_joint") {
+      state.answers.spouseIncome = state.answers.spouseIncome || null;
+    } else {
+      state.answers.spouseIncome = 0;
+      state.answers.spouseWithholding = 0;
+    }
+    observe("correction.apply", `Changed filing status to ${labelStatus(status)}.`);
+    addMessage("agent", `Got it. I changed the filing status to ${labelStatus(status)}.`);
+    return true;
+  }
+
+  if (/^address\b/i.test(value)) {
+    const address = value.replace(/^address\s*(to)?\s*/i, "").trim();
+    if (!address) throw new Error("Please include the address to use.");
+    state.answers.address = address;
+    observe("correction.apply", "Changed taxpayer address.");
+    addMessage("agent", "Got it. I updated the address.");
+    return true;
+  }
+
+  if (/^dependents?\b/i.test(value)) {
+    const dependentText = value.replace(/^dependents?\s*(to)?\s*/i, "").trim();
+    state.answers.dependents = parseDependents(dependentText);
+    observe("correction.apply", `Changed dependents to ${state.answers.dependents.length}.`);
+    addMessage("agent", `Got it. I updated dependents to ${state.answers.dependents.length}.`);
+    return true;
+  }
+
+  if (/^spouse\b/i.test(value)) {
+    if (state.answers.filingStatus !== "married_joint") {
+      throw new Error("Spouse wages only apply to married filing jointly in this prototype.");
+    }
+    const spouse = parseMoneyPair(value);
+    state.answers.spouseIncome = spouse.wages;
+    state.answers.spouseWithholding = spouse.withholding;
+    observe("correction.apply", "Changed spouse W-2 wages and withholding.");
+    addMessage("agent", "Got it. I updated the spouse W-2 amounts.");
+    return true;
+  }
+
+  if (/digital|crypto|virtual|asset/i.test(value)) {
+    if (!/\b(yes|no|y|n)\b/i.test(value)) throw new Error("Please set digital assets to yes or no.");
+    state.answers.digitalAssets = /\b(yes|y)\b/i.test(value);
+    observe("correction.apply", `Changed digital assets to ${state.answers.digitalAssets ? "yes" : "no"}.`);
+    addMessage("agent", `Got it. I updated digital assets to ${state.answers.digitalAssets ? "yes" : "no"}.`);
+    return true;
+  }
+
+  if (/claim|dependent\s+status/i.test(value)) {
+    if (!/\b(yes|no|y|n)\b/i.test(value)) throw new Error("Please set dependent-claim status to yes or no.");
+    state.answers.canBeClaimed = /\b(yes|y)\b/i.test(value);
+    observe("correction.apply", `Changed dependent-claim status to ${state.answers.canBeClaimed ? "yes" : "no"}.`);
+    addMessage("agent", `Got it. I updated whether someone can claim the taxpayer to ${state.answers.canBeClaimed ? "yes" : "no"}.`);
+    return true;
+  }
+
+  throw new Error("I can correct filing status, spouse wages, address, dependents, claim status, or digital assets.");
 }
 
 function parseFilingStatus(text) {
@@ -589,8 +667,7 @@ function computeTax(status, taxableIncome) {
   return { tax: Math.round(tax), breakdown };
 }
 
-function finishReturn() {
-  observe("tool.computeTax.start", "Computing AGI, deduction, taxable income, tax, credits, and refund.");
+function computeReturnResult() {
   const status = state.answers.filingStatus || "single";
   const wages = totalWages();
   const deduction = TAX_RULES.standardDeduction[status];
@@ -601,7 +678,7 @@ function finishReturn() {
   const childCredit = Math.min(taxBeforeCredits, dependentCount * TAX_RULES.childTaxCredit);
   const tax = Math.max(0, taxBeforeCredits - childCredit);
   const withholding = totalWithholding();
-  state.result = {
+  return {
     status,
     wages,
     agi: wages,
@@ -615,6 +692,11 @@ function finishReturn() {
     refund: withholding - tax,
     generatedAt: new Date().toISOString(),
   };
+}
+
+function finishReturn() {
+  observe("tool.computeTax.start", "Computing AGI, deduction, taxable income, tax, credits, and refund.");
+  state.result = computeReturnResult();
   state.phase = "complete";
   setStatus("1040 ready");
   observe("tool.fill1040.ok", `Generated downloadable 1040-style return with ${state.result.refund >= 0 ? "refund" : "amount owed"} ${money(Math.abs(state.result.refund))}.`);
@@ -623,6 +705,18 @@ function finishReturn() {
     `Done. I prepared the educational 2025 Form 1040 PDF for ${state.w2.employeeName}. Based on the simple W-2 scenario, the ${state.result.refund >= 0 ? "estimated refund is" : "estimated amount owed is"} ${money(Math.abs(state.result.refund))}.\n\nUse the Download 1040 button on the right. This is for hackathon/testing only, not tax advice and not a real filing.`
   );
   renderSummary();
+}
+
+function recomputeCompletedReturn() {
+  observe("tool.computeTax.start", "Recomputing return after user correction.");
+  state.result = computeReturnResult();
+  state.phase = "complete";
+  setStatus("1040 ready");
+  observe("tool.fill1040.update", `Updated return with ${state.result.refund >= 0 ? "refund" : "amount owed"} ${money(Math.abs(state.result.refund))}.`);
+  addMessage(
+    "agent",
+    `Updated. I recalculated the return, and the ${state.result.refund >= 0 ? "estimated refund is" : "estimated amount owed is"} now ${money(Math.abs(state.result.refund))}.`
+  );
 }
 
 function buildReturnHtml() {

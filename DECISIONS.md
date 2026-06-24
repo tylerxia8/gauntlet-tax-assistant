@@ -16,6 +16,8 @@ The calculation is intentionally bounded to a fake 2025 W-2 taxpayer earning rou
 
 The assistant asks at most five questions: filing status, spouse wages if needed, address confirmation, dependent details or zero-dependent confirmation, and final checks for dependent-claim status plus digital asset activity. The fake W-2 supplies the rest. This keeps the user experience warm and short while still letting the return change based on key inputs.
 
+Users can correct key answers after completion using explicit correction phrases. Corrections update state and recompute the return without adding to the question count.
+
 ## Output
 
 The app produces a downloadable PDF by loading the official IRS 2025 Form 1040 fillable PDF and populating the fields needed for this simple W-2 path with `pdf-lib`. If PDF generation fails in an unusual browser environment, the tool falls back to an HTML return so the end-to-end harness still completes.

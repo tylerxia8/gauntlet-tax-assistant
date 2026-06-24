@@ -49,6 +49,15 @@ Use the live app at `https://tylerxia8.github.io/gauntlet-tax-assistant/`.
    - `no one can claim me, no digital assets`
 3. Confirm the summary shows **Dependents 1** and the refund increases.
 
+## Correction Stretch
+
+After any completed return, type:
+
+- `change filing status to head of household`
+- `change dependents to Maya Lee, 234-56-7890, daughter`
+
+The app should update the summary, tax worksheet, observation trail, return data, and subsequent PDF downloads without asking more questions.
+
 ## Bad W-2 Guardrail
 
 Paste a W-2 JSON object with `"taxYear": 2024` and click **Parse W-2**. The app should reject it and log `guardrail.w2.reject`.

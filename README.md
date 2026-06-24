@@ -53,6 +53,7 @@ Useful judge controls:
 - **Export** in the observation panel saves the full event trail as JSON.
 - The four-pillar strip above the chat shows live harness state for chat loop, tools, guardrails, and observation.
 - The return summary includes a bracket-by-bracket tax worksheet once the 1040 is ready.
+- Corrections work after completion. For example: `change filing status to head of household` or `change dependents to Maya Lee, 234-56-7890, daughter`.
 
 ## Deployment
 

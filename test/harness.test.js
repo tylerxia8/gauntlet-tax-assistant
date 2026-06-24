@@ -220,6 +220,30 @@ async function testOneDependentCredit() {
   await assertReturnDataDownload(harness);
 }
 
+async function testCorrectionAfterCompletion() {
+  const harness = createHarness();
+  harness.click("#loadDemoW2");
+  harness.click("#parseW2");
+  harness.submit("single");
+  harness.submit("yes");
+  harness.submit("0");
+  harness.submit("no dependent, no digital assets");
+
+  assert.match(harness.text("#summaryList"), /Filing statusSingle/);
+  assert.match(harness.text("#summaryList"), /Refund\$748/);
+
+  harness.submit("change filing status to head of household");
+  assert.match(harness.text("#summaryList"), /Filing statusHead of household/);
+  assert.match(harness.text("#summaryList"), /Refund\$1,787/);
+  assert.match(harness.text("#observationList"), /correction.apply/);
+  assert.match(harness.text("#observationList"), /tool.fill1040.update/);
+
+  harness.submit("change dependents to Maya Lee, 234-56-7890, daughter");
+  assert.match(harness.text("#summaryList"), /Dependents1/);
+  assert.match(harness.text("#summaryList"), /Refund\$3,450/);
+  await assertPdfDownload(harness);
+}
+
 async function testHeadOfHouseholdAmountOwed() {
   const harness = createHarness();
   harness.setW2(JSON.stringify({
@@ -252,6 +276,7 @@ async function testHeadOfHouseholdAmountOwed() {
   await testW2FileUpload();
   testDependentGuardrailRecovery();
   await testOneDependentCredit();
+  await testCorrectionAfterCompletion();
   await testHeadOfHouseholdAmountOwed();
   console.log("Harness smoke test passed.");
 })().catch((error) => {
