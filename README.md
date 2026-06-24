@@ -48,6 +48,7 @@ The right panel shows the harness observation trail: chat events, tool calls, gu
 
 For a fuller walkthrough, see [`JUDGE_SCRIPT.md`](./JUDGE_SCRIPT.md).
 For tax assumptions and limitations, see [`TAX_NOTES.md`](./TAX_NOTES.md).
+For red-team guardrails, see [`SECURITY_NOTES.md`](./SECURITY_NOTES.md).
 
 ## Tests
 

@@ -55,6 +55,17 @@ const DEMO_W2 = {
 };
 
 const FORM_1040_URL = "./assets/f1040-2025.pdf";
+const MAX_CHAT_CHARS = 700;
+const MAX_W2_CHARS = 12000;
+const MAX_UPLOAD_BYTES = 20000;
+
+const HOSTILE_INSTRUCTION_PATTERNS = [
+  /\b(ignore|disregard|forget|override|bypass|disable)\b.{0,80}\b(instruction|guardrail|rule|policy|system|developer|prompt|validation|safety)\b/i,
+  /\b(system|developer|assistant)\s*:/i,
+  /\b(prompt\s*injection|jailbreak|red\s*team|exfiltrate|secret|api\s*key|token)\b/i,
+  /<\s*script\b/i,
+  /\b(onerror|onload|javascript:|data:text\/html)\b/i,
+];
 
 const IRS_1040_FIELDS = {
   firstName: "topmostSubform[0].Page1[0].f1_14[0]",
@@ -144,7 +155,10 @@ function addMessage(role, text) {
   const node = document.createElement("article");
   node.className = `message ${role}`;
   const speaker = role === "user" ? "You" : role === "guardrail" ? "Guardrail" : "Assistant";
-  node.innerHTML = `<small>${speaker}</small>${escapeHtml(text)}`;
+  const speakerNode = document.createElement("small");
+  speakerNode.textContent = speaker;
+  node.appendChild(speakerNode);
+  node.appendChild(document.createTextNode(String(text)));
   els.messages.appendChild(node);
   els.messages.scrollTop = els.messages.scrollHeight;
 }
@@ -291,6 +305,11 @@ function downloadTextFile(filename, text, type = "application/json") {
 
 function loadW2File(file) {
   if (!file) return;
+  if (file.size > MAX_UPLOAD_BYTES) {
+    observe("guardrail.file.reject", "Rejected W-2 upload over the size limit.");
+    addMessage("guardrail", "That file is too large for this prototype. Please upload a small fake W-2 JSON/text file.");
+    return;
+  }
   if (!/\.(json|txt)$/i.test(file.name) && !/json|text/.test(file.type)) {
     observe("guardrail.file.reject", "Rejected W-2 upload with unsupported file type.");
     addMessage("guardrail", "Please upload a fake W-2 as a .json or .txt file.");
@@ -364,6 +383,7 @@ function buildReturnDataPacket() {
 
 function parseW2Text(text) {
   observe("tool.parseW2.start", "Reading user-supplied W-2 data.");
+  assertInputSafe(text, "W-2 source", MAX_W2_CHARS);
   let data;
   try {
     data = JSON.parse(text);
@@ -409,6 +429,10 @@ function validateW2(w2) {
   const errors = [];
   if (w2.taxYear !== TAX_YEAR) errors.push("W-2 must be for tax year 2025.");
   if (!w2.employeeName) errors.push("Employee name is required.");
+  validatePlainField(w2.employeeName, "Employee name", errors);
+  validatePlainField(w2.employeeAddress, "Employee address", errors);
+  validatePlainField(w2.employerName, "Employer name", errors);
+  validatePlainField(w2.employerAddress, "Employer address", errors);
   if (!/^\d{3}-\d{2}-\d{4}$/.test(w2.employeeSsn)) errors.push("Use a fake SSN in ###-##-#### format.");
   if (!w2.employerName) errors.push("Employer name is required.");
   if (w2.wages < 25000 || w2.wages > 60000) errors.push("This prototype is bounded to W-2 wages from $25,000 to $60,000.");
@@ -416,6 +440,29 @@ function validateW2(w2) {
   if (errors.length) {
     observe("guardrail.w2.reject", errors.join(" "));
     throw new Error(errors.join("\n"));
+  }
+}
+
+function validatePlainField(value, label, errors) {
+  if (!value) return;
+  const text = String(value);
+  if (text.length > 180) errors.push(`${label} is too long for this prototype.`);
+  if (/[<>]/.test(text)) errors.push(`${label} contains markup characters that are not valid W-2 data.`);
+  if (HOSTILE_INSTRUCTION_PATTERNS.some((pattern) => pattern.test(text))) {
+    errors.push(`${label} contains instructions or markup that are not valid W-2 data.`);
+  }
+  if (/[\u0000-\u001f\u007f]/.test(text)) errors.push(`${label} contains unsupported control characters.`);
+}
+
+function assertInputSafe(text, label, maxChars = MAX_CHAT_CHARS) {
+  const value = String(text || "");
+  if (value.length > maxChars) {
+    observe("guardrail.input.reject", `Rejected ${label} over the length limit.`);
+    throw new Error(`${label} is too long for this prototype.`);
+  }
+  if (HOSTILE_INSTRUCTION_PATTERNS.some((pattern) => pattern.test(value))) {
+    observe("guardrail.input.reject", `Rejected ${label} with hostile instruction or script-like content.`);
+    throw new Error(`${label} contains instructions or script-like content that I will not treat as tax data.`);
   }
 }
 
@@ -469,6 +516,7 @@ function handleUserMessage(text) {
   observe("chat.user", `Received reply during ${state.phase}.`);
 
   try {
+    assertInputSafe(normalized, "Chat reply");
     if (applyCorrection(normalized)) {
       if (state.result) {
         recomputeCompletedReturn();
@@ -516,6 +564,7 @@ function handleUserMessage(text) {
 
 function applyCorrection(text) {
   if (!/^(change|update|correct|set)\b/i.test(text)) return false;
+  assertInputSafe(text, "Correction");
   if (!state.w2) throw new Error("Please load or paste a fake W-2 before correcting return answers.");
 
   const value = text.replace(/^(change|update|correct|set)\s+/i, "").trim();
@@ -537,6 +586,7 @@ function applyCorrection(text) {
   if (/^address\b/i.test(value)) {
     const address = value.replace(/^address\s*(to)?\s*/i, "").trim();
     if (!address) throw new Error("Please include the address to use.");
+    assertInputSafe(address, "Address correction", 220);
     state.answers.address = address;
     observe("correction.apply", "Changed taxpayer address.");
     addMessage("agent", "Got it. I updated the address.");
@@ -615,6 +665,7 @@ function parseFinalChecks(text) {
 
 function parseDependents(text) {
   const value = text.trim();
+  assertInputSafe(value, "Dependent answer");
   if (/^(yes|y|0|none|no|no dependents)\b/i.test(value)) return [];
   if (/\b(two|three|four|[2-9])\b/i.test(value)) {
     throw new Error("This prototype supports at most one qualifying child dependent.");
@@ -866,6 +917,7 @@ function splitName(fullName) {
 }
 
 function parseAddress(value) {
+  assertInputSafe(value, "Address", 220);
   const match = String(value).match(/^(.+),\s*([^,]+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/i);
   if (!match) {
     return { street: value, city: "", state: "", zip: "" };
