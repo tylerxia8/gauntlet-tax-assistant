@@ -10,11 +10,11 @@ The tax calculation exposes a bracket-by-bracket worksheet in the UI and in the 
 
 ## Tax Scope
 
-The calculation is intentionally bounded to a fake 2025 W-2 taxpayer earning roughly $40,000. It supports single, married filing jointly, and head of household; optional spouse W-2 wages for a joint return; no dependent credits; and the standard deduction. It does not itemize, handle self-employment, e-file, process real PII, or claim to be tax advice.
+The calculation is intentionally bounded to a fake 2025 W-2 taxpayer earning roughly $40,000. It supports single, married filing jointly, and head of household; optional spouse W-2 wages for a joint return; zero or one qualifying child dependent under simplified assumptions; and the standard deduction. It does not itemize, handle self-employment, e-file, process real PII, or claim to be tax advice.
 
 ## Conversation
 
-The assistant asks at most five questions: filing status, spouse wages if needed, address confirmation, no-dependent confirmation, and final checks for dependent-claim status plus digital asset activity. The fake W-2 supplies the rest. This keeps the user experience warm and short while still letting the return change based on key inputs.
+The assistant asks at most five questions: filing status, spouse wages if needed, address confirmation, dependent details or zero-dependent confirmation, and final checks for dependent-claim status plus digital asset activity. The fake W-2 supplies the rest. This keeps the user experience warm and short while still letting the return change based on key inputs.
 
 ## Output
 

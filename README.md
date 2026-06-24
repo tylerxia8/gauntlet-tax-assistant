@@ -25,13 +25,25 @@ Then open `http://localhost:4173`. No backend API key is required. The local ser
 3. Answer the chat questions, for example:
    - `single`
    - `yes`
-   - `yes`
+   - `0`
    - `no dependent, no digital assets`
 4. Click **Download 1040**.
 
 The right panel shows the harness observation trail: chat events, tool calls, guardrail decisions, and the final form-generation action.
 
 For a fuller walkthrough, see [`JUDGE_SCRIPT.md`](./JUDGE_SCRIPT.md).
+For tax assumptions and limitations, see [`TAX_NOTES.md`](./TAX_NOTES.md).
+
+## Tests
+
+Install the Playwright browser once, then run the full suite:
+
+```sh
+npx playwright install chromium
+npm test
+```
+
+The suite includes DOM harness tests, PDF field-map checks, and a Chromium E2E test that drives the chat and verifies the 1040 PDF download.
 
 Useful judge controls:
 
@@ -50,6 +62,8 @@ This can be deployed as a static site. On Render, create a **Static Site** with:
 - Publish directory: `.`
 
 The app uses `vendor/pdf-lib.min.js` and `assets/f1040-2025.pdf` at runtime, so no server process is required.
+
+The included `render.yaml` captures the same static deployment settings.
 
 ## Scope
 

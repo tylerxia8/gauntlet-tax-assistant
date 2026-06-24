@@ -97,7 +97,7 @@ async function assertReturnDataDownload(harness) {
   assert.equal(download.blob.type, "application/json");
   const payload = JSON.parse(await download.blob.text());
   assert.ok(payload.result.taxBreakdown.length >= 2);
-  assert.equal(payload.scope.dependentCredits, false);
+  assert.match(payload.scope.dependentCredits, /0 or 1 qualifying child/);
   assert.match(harness.text("#observationList"), /tool.downloadReturnData/);
 }
 
@@ -107,6 +107,9 @@ async function testSingleFlow() {
   harness.click("#loadDemoW2");
   harness.click("#downloadDemoW2");
   assert.match(harness.downloadState().filename, /fake-2025-w2-jordan-lee\.json/);
+  harness.click("#downloadDemoW2Html");
+  assert.match(harness.downloadState().filename, /fake-2025-w2-jordan-lee\.html/);
+  assert.equal(harness.downloadState().blob.type, "text/html");
   harness.click("#parseW2");
   harness.submit("single");
   harness.submit("yes");
@@ -193,12 +196,28 @@ function testDependentGuardrailRecovery() {
   harness.submit("yes");
   harness.submit("2 kids");
 
-  assert.match(harness.text("#messages"), /Dependent credits need full dependent details/);
+  assert.match(harness.text("#messages"), /at most one qualifying child dependent/);
   assert.match(harness.text("#statusPill"), /Question 3 of 5/);
 
   harness.submit("yes");
   harness.submit("no dependent, no digital assets");
   assert.match(harness.text("#statusPill"), /1040 ready/);
+}
+
+async function testOneDependentCredit() {
+  const harness = createHarness();
+  harness.click("#loadDemoW2");
+  harness.click("#parseW2");
+  harness.submit("single");
+  harness.submit("yes");
+  harness.submit("Maya Lee, 234-56-7890, daughter");
+  harness.submit("no one can claim me, no digital assets");
+
+  assert.match(harness.text("#summaryList"), /Dependents1/);
+  assert.match(harness.text("#summaryList"), /Tax\$702/);
+  assert.match(harness.text("#summaryList"), /Refund\$2,748/);
+  await assertPdfDownload(harness);
+  await assertReturnDataDownload(harness);
 }
 
 async function testHeadOfHouseholdAmountOwed() {
@@ -232,6 +251,7 @@ async function testHeadOfHouseholdAmountOwed() {
   testBadW2Rejected();
   await testW2FileUpload();
   testDependentGuardrailRecovery();
+  await testOneDependentCredit();
   await testHeadOfHouseholdAmountOwed();
   console.log("Harness smoke test passed.");
 })().catch((error) => {

@@ -35,6 +35,7 @@ const TAX_RULES = {
       [Infinity, 0.37],
     ],
   },
+  childTaxCredit: 2000,
 };
 
 const DEMO_W2 = {
@@ -68,6 +69,11 @@ const IRS_1040_FIELDS = {
   statusHeadOfHousehold: "topmostSubform[0].Page1[0].c1_8[0]",
   digitalAssetsYes: "topmostSubform[0].Page1[0].c1_10[0]",
   digitalAssetsNo: "topmostSubform[0].Page1[0].c1_10[1]",
+  dependentFirstName: "topmostSubform[0].Page1[0].Table_Dependents[0].Row1[0].f1_31[0]",
+  dependentLastName: "topmostSubform[0].Page1[0].Table_Dependents[0].Row1[0].f1_32[0]",
+  dependentSsn: "topmostSubform[0].Page1[0].Table_Dependents[0].Row1[0].f1_33[0]",
+  dependentRelationship: "topmostSubform[0].Page1[0].Table_Dependents[0].Row1[0].f1_34[0]",
+  dependentChildTaxCredit: "topmostSubform[0].Page1[0].Table_Dependents[0].Row5[0].Dependent1[0].c1_12[0]",
   wages: "topmostSubform[0].Page1[0].f1_47[0]",
   totalIncome: "topmostSubform[0].Page1[0].f1_70[0]",
   agi: "topmostSubform[0].Page1[0].f1_72[0]",
@@ -75,12 +81,14 @@ const IRS_1040_FIELDS = {
   taxableIncome: "topmostSubform[0].Page1[0].f1_75[0]",
   taxpayerClaimedAsDependent: "topmostSubform[0].Page2[0].c2_1[0]",
   tax: "topmostSubform[0].Page2[0].f2_01[0]",
+  childTaxCredit: "topmostSubform[0].Page2[0].f2_03[0]",
   taxAfterCredits: "topmostSubform[0].Page2[0].f2_08[0]",
   w2Withholding: "topmostSubform[0].Page2[0].f2_17[0]",
   totalWithholding: "topmostSubform[0].Page2[0].f2_20[0]",
   totalPayments: "topmostSubform[0].Page2[0].f2_30[0]",
   refund: "topmostSubform[0].Page2[0].f2_31[0]",
   amountOwed: "topmostSubform[0].Page2[0].f2_35[0]",
+  signatureDate: "topmostSubform[0].Page2[0].f2_38[0]",
 };
 
 const state = {
@@ -107,6 +115,7 @@ const els = {
   status: document.querySelector("#statusPill"),
   loadDemoW2: document.querySelector("#loadDemoW2"),
   downloadDemoW2: document.querySelector("#downloadDemoW2"),
+  downloadDemoW2Html: document.querySelector("#downloadDemoW2Html"),
   w2File: document.querySelector("#w2File"),
   reset: document.querySelector("#resetSession"),
   w2Text: document.querySelector("#w2Text"),
@@ -184,6 +193,9 @@ function renderSummary() {
   }
   if (state.answers.filingStatus) {
     rows.push(["Filing status", labelStatus(state.answers.filingStatus)]);
+  }
+  if (Array.isArray(state.answers.dependents)) {
+    rows.push(["Dependents", String(state.answers.dependents.length)]);
   }
   if (state.result) {
     rows.push(["Taxable income", money(state.result.taxableIncome)]);
@@ -294,6 +306,41 @@ function loadW2File(file) {
   reader.readAsText(file);
 }
 
+function buildFakeW2Html(w2) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake 2025 W-2 - ${escapeHtml(w2.employeeName)}</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f5f5f5;margin:32px;color:#111}
+.w2{max-width:900px;margin:auto;background:#fff;border:2px solid #111;padding:18px}
+.top{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:10px}
+h1{margin:0;font-size:28px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-left:1px solid #111;border-top:1px solid #111;margin-top:16px}
+.box{border-right:1px solid #111;border-bottom:1px solid #111;padding:9px;min-height:54px}.box strong{display:block;font-size:12px}.wide{grid-column:span 2}.note{font-size:12px;color:#555;margin-top:14px}
+</style>
+</head>
+<body>
+<section class="w2">
+<div class="top"><div><h1>Form W-2</h1><strong>Wage and Tax Statement</strong></div><div><strong>${TAX_YEAR}</strong><br>FAKE TEST DATA</div></div>
+<div class="grid">
+<div class="box"><strong>a Employee SSN</strong>${escapeHtml(w2.employeeSsn)}</div>
+<div class="box"><strong>b Employer EIN</strong>${escapeHtml(w2.employerEin)}</div>
+<div class="box wide"><strong>c Employer name/address</strong>${escapeHtml(w2.employerName)}<br>${escapeHtml(w2.employerAddress)}</div>
+<div class="box wide"><strong>e/f Employee name/address</strong>${escapeHtml(w2.employeeName)}<br>${escapeHtml(w2.employeeAddress)}</div>
+<div class="box"><strong>1 Wages, tips, other compensation</strong>${money(w2.wages)}</div>
+<div class="box"><strong>2 Federal income tax withheld</strong>${money(w2.federalWithholding)}</div>
+<div class="box"><strong>3 Social security wages</strong>${money(w2.socialSecurityWages || w2.wages)}</div>
+<div class="box"><strong>4 Social security tax withheld</strong>${money(w2.socialSecurityTax || 0)}</div>
+<div class="box"><strong>5 Medicare wages and tips</strong>${money(w2.medicareWages || w2.wages)}</div>
+<div class="box"><strong>6 Medicare tax withheld</strong>${money(w2.medicareTax || 0)}</div>
+</div>
+<p class="note">This is synthetic hackathon test data only. Do not use real PII.</p>
+</section>
+</body>
+</html>`;
+}
+
 function buildReturnDataPacket() {
   return {
     generatedAt: new Date().toISOString(),
@@ -303,7 +350,7 @@ function buildReturnDataPacket() {
       realFiling: false,
       taxAdvice: false,
       supportedIncome: "single fake W-2, optional spouse W-2 wages for joint filing",
-      dependentCredits: false,
+      dependentCredits: "0 or 1 qualifying child with simplified assumptions",
     },
     w2: state.w2,
     answers: state.answers,
@@ -401,7 +448,7 @@ function nextPrompt() {
   }
   if (state.answers.dependents === null) {
     setStatus(`Question ${state.questionCount + 1} of 5`);
-    ask("For this simple W-2-only prototype, I can only file a clean 1040 with no dependent credits. Should I continue with 0 dependents? Please answer yes or no.", "ask_dependents");
+    ask("Dependents: reply `0` for none, or one child like `Maya Lee, 234-56-7890, daughter`. I assume any listed child is under 17, lived with the taxpayer all year, and qualifies for the child tax credit.", "ask_dependents");
     return;
   }
   if (state.answers.canBeClaimed === null || state.answers.digitalAssets === null) {
@@ -440,11 +487,7 @@ function handleUserMessage(text) {
     } else if (state.phase === "ask_address") {
       state.answers.address = /^yes|use|w-?2|same/i.test(normalized) ? state.w2.employeeAddress : normalized;
     } else if (state.phase === "ask_dependents") {
-      if (/^(yes|y|0|none|no dependents)\b/i.test(normalized)) {
-        state.answers.dependents = 0;
-      } else {
-        throw new Error("Dependent credits need full dependent details and Schedule 8812 support. This prototype keeps the return valid by supporting 0 dependents only.");
-      }
+      state.answers.dependents = parseDependents(normalized);
     } else if (state.phase === "ask_final_checks") {
       const checks = parseFinalChecks(normalized);
       state.answers.canBeClaimed = checks.canBeClaimed;
@@ -489,6 +532,32 @@ function parseFinalChecks(text) {
   return { canBeClaimed, digitalAssets };
 }
 
+function parseDependents(text) {
+  const value = text.trim();
+  if (/^(yes|y|0|none|no|no dependents)\b/i.test(value)) return [];
+  if (/\b(two|three|four|[2-9])\b/i.test(value)) {
+    throw new Error("This prototype supports at most one qualifying child dependent.");
+  }
+
+  const parts = value.split(",").map((part) => part.trim()).filter(Boolean);
+  const ssn = value.match(/\b\d{3}-\d{2}-\d{4}\b/)?.[0] || "";
+  if (parts.length < 3 || !ssn) {
+    throw new Error("For one child dependent, use: `First Last, 234-56-7890, relationship`.");
+  }
+
+  const name = splitName(parts[0]);
+  const relationship = parts.find((part) => !part.includes(ssn) && part !== parts[0]) || parts[2];
+  if (!name.first || !name.last) throw new Error("Please include the dependent's first and last name.");
+  return [{
+    firstName: name.first,
+    lastName: name.last,
+    ssn,
+    relationship,
+    qualifyingChild: true,
+    assumptions: "Under 17, lived with taxpayer all year, valid SSN, taxpayer may claim child tax credit.",
+  }];
+}
+
 function totalWages() {
   return state.w2.wages + Number(state.answers.spouseIncome || 0);
 }
@@ -528,7 +597,8 @@ function finishReturn() {
   const taxableIncome = Math.max(0, wages - deduction);
   const computedTax = computeTax(status, taxableIncome);
   const taxBeforeCredits = computedTax.tax;
-  const childCredit = 0;
+  const dependentCount = Array.isArray(state.answers.dependents) ? state.answers.dependents.length : 0;
+  const childCredit = Math.min(taxBeforeCredits, dependentCount * TAX_RULES.childTaxCredit);
   const tax = Math.max(0, taxBeforeCredits - childCredit);
   const withholding = totalWithholding();
   state.result = {
@@ -621,6 +691,9 @@ async function buildReturnPdfBytes() {
   }
 
   const pdfDoc = await window.PDFLib.PDFDocument.load(await response.arrayBuffer());
+  pdfDoc.setTitle(`Educational 2025 Form 1040 - ${state.w2.employeeName}`);
+  pdfDoc.setSubject("Hackathon prototype. Not tax advice, not e-filed, not signed.");
+  pdfDoc.setCreator("Gauntlet Tax-Filing Assistant Prototype");
   const form = pdfDoc.getForm();
   const font = await pdfDoc.embedFont(window.PDFLib.StandardFonts.Helvetica);
   const r = state.result;
@@ -641,6 +714,7 @@ async function buildReturnPdfBytes() {
   checkPdfBox(form, IRS_1040_FIELDS.digitalAssetsYes, state.answers.digitalAssets === true);
   checkPdfBox(form, IRS_1040_FIELDS.digitalAssetsNo, state.answers.digitalAssets === false);
   checkPdfBox(form, IRS_1040_FIELDS.taxpayerClaimedAsDependent, state.answers.canBeClaimed === true);
+  fillDependentFields(form, state.answers.dependents[0]);
 
   setPdfMoney(form, IRS_1040_FIELDS.wages, r.wages);
   setPdfMoney(form, IRS_1040_FIELDS.totalIncome, r.wages);
@@ -648,17 +722,28 @@ async function buildReturnPdfBytes() {
   setPdfMoney(form, IRS_1040_FIELDS.standardDeduction, r.deduction);
   setPdfMoney(form, IRS_1040_FIELDS.taxableIncome, r.taxableIncome);
   setPdfMoney(form, IRS_1040_FIELDS.tax, r.taxBeforeCredits);
+  setPdfMoney(form, IRS_1040_FIELDS.childTaxCredit, r.childCredit);
   setPdfMoney(form, IRS_1040_FIELDS.taxAfterCredits, r.tax);
   setPdfMoney(form, IRS_1040_FIELDS.w2Withholding, r.withholding);
   setPdfMoney(form, IRS_1040_FIELDS.totalWithholding, r.withholding);
   setPdfMoney(form, IRS_1040_FIELDS.totalPayments, r.withholding);
   setPdfMoney(form, IRS_1040_FIELDS.refund, Math.max(0, r.refund));
   setPdfMoney(form, IRS_1040_FIELDS.amountOwed, Math.max(0, -r.refund));
+  setPdfText(form, IRS_1040_FIELDS.signatureDate, new Date().toLocaleDateString("en-US"));
 
   form.updateFieldAppearances(font);
   form.flatten();
   observe("tool.fillPdf.ok", "Populated and flattened official IRS 2025 Form 1040 fields.");
   return pdfDoc.save();
+}
+
+function fillDependentFields(form, dependent) {
+  if (!dependent) return;
+  setPdfText(form, IRS_1040_FIELDS.dependentFirstName, dependent.firstName);
+  setPdfText(form, IRS_1040_FIELDS.dependentLastName, dependent.lastName);
+  setPdfText(form, IRS_1040_FIELDS.dependentSsn, dependent.ssn.replace(/\D/g, ""));
+  setPdfText(form, IRS_1040_FIELDS.dependentRelationship, dependent.relationship);
+  checkPdfBox(form, IRS_1040_FIELDS.dependentChildTaxCredit, true);
 }
 
 function splitName(fullName) {
@@ -742,6 +827,11 @@ els.loadDemoW2.addEventListener("click", () => {
 els.downloadDemoW2.addEventListener("click", () => {
   observe("fixture.download", "Downloaded fake W-2 JSON fixture.");
   downloadTextFile("fake-2025-w2-jordan-lee.json", JSON.stringify(DEMO_W2, null, 2));
+});
+
+els.downloadDemoW2Html.addEventListener("click", () => {
+  observe("fixture.downloadHtml", "Downloaded visual fake W-2 preview.");
+  downloadTextFile("fake-2025-w2-jordan-lee.html", buildFakeW2Html(DEMO_W2), "text/html");
 });
 
 els.w2File.addEventListener("change", () => {

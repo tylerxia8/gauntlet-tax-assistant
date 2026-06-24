@@ -260,6 +260,7 @@ h2 {
 #parseW2,
 #downloadReturn,
 #downloadDemoW2,
+#downloadDemoW2Html,
 #downloadReturnData {
   width: 100%;
   margin-top: 0.7rem;
@@ -269,6 +270,7 @@ h2 {
 }
 
 #downloadDemoW2,
+#downloadDemoW2Html,
 #downloadReturnData {
   background: #fff;
   color: var(--accent-strong);
