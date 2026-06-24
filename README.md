@@ -31,6 +31,12 @@ Then open `http://localhost:4173`. No backend API key is required. The local ser
 
 The right panel shows the harness observation trail: chat events, tool calls, guardrail decisions, and the final form-generation action.
 
+Useful judge controls:
+
+- **Download fake W-2 JSON** saves the bundled test W-2 fixture.
+- **Export** in the observation panel saves the full event trail as JSON.
+- The four-pillar strip above the chat shows live harness state for chat loop, tools, guardrails, and observation.
+
 ## Deployment
 
 This can be deployed as a static site. On Render, create a **Static Site** with:

@@ -106,12 +106,18 @@ const els = {
   input: document.querySelector("#chatInput"),
   status: document.querySelector("#statusPill"),
   loadDemoW2: document.querySelector("#loadDemoW2"),
+  downloadDemoW2: document.querySelector("#downloadDemoW2"),
   reset: document.querySelector("#resetSession"),
   w2Text: document.querySelector("#w2Text"),
   parseW2: document.querySelector("#parseW2"),
   summary: document.querySelector("#summaryList"),
   observations: document.querySelector("#observationList"),
+  downloadTrail: document.querySelector("#downloadTrail"),
   download: document.querySelector("#downloadReturn"),
+  pillarChat: document.querySelector("#pillarChat"),
+  pillarTools: document.querySelector("#pillarTools"),
+  pillarGuardrails: document.querySelector("#pillarGuardrails"),
+  pillarObservation: document.querySelector("#pillarObservation"),
 };
 
 function money(value) {
@@ -139,6 +145,7 @@ function observe(type, detail) {
   };
   state.observations.unshift(entry);
   renderObservations();
+  renderPillars();
 }
 
 function escapeHtml(value) {
@@ -155,6 +162,15 @@ function renderObservations() {
   els.observations.innerHTML = state.observations
     .map((entry) => `<li><strong>${escapeHtml(entry.type)}</strong> ${escapeHtml(entry.detail)} <span>${entry.at}</span></li>`)
     .join("");
+}
+
+function renderPillars() {
+  els.pillarChat.textContent = `${state.questionCount}/5 questions asked; phase: ${state.phase}`;
+  const lastTool = state.observations.find((entry) => entry.type.startsWith("tool."));
+  els.pillarTools.textContent = lastTool ? lastTool.detail : "Waiting for first tool call";
+  const lastGuardrail = state.observations.find((entry) => entry.type.startsWith("guardrail."));
+  els.pillarGuardrails.textContent = lastGuardrail ? lastGuardrail.detail : "2025 fake W-2 scope enforced";
+  els.pillarObservation.textContent = `${state.observations.length} events captured`;
 }
 
 function renderSummary() {
@@ -207,11 +223,24 @@ function resetSession() {
   setStatus("Waiting for W-2");
   renderSummary();
   renderObservations();
+  renderPillars();
   observe("session.start", "Initialized stateful chat loop with a five-question cap.");
   addMessage(
     "agent",
     "Hi, I can help create an educational 2025 federal Form 1040 from a fake W-2. Load the sample W-2 or paste one on the right, and I'll keep us under five questions."
   );
+}
+
+function downloadTextFile(filename, text, type = "application/json") {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function parseW2Text(text) {
@@ -631,6 +660,11 @@ els.loadDemoW2.addEventListener("click", () => {
   observe("fixture.load", "Loaded fake W-2 test fixture into the input area.");
 });
 
+els.downloadDemoW2.addEventListener("click", () => {
+  observe("fixture.download", "Downloaded fake W-2 JSON fixture.");
+  downloadTextFile("fake-2025-w2-jordan-lee.json", JSON.stringify(DEMO_W2, null, 2));
+});
+
 els.parseW2.addEventListener("click", () => {
   try {
     state.w2 = parseW2Text(els.w2Text.value);
@@ -644,6 +678,10 @@ els.parseW2.addEventListener("click", () => {
 });
 
 els.reset.addEventListener("click", resetSession);
+els.downloadTrail.addEventListener("click", () => {
+  observe("observation.export", "Exported observation trail as JSON.");
+  downloadTextFile("tax-assistant-observation-trail.json", JSON.stringify([...state.observations].reverse(), null, 2));
+});
 els.download.addEventListener("click", downloadReturn);
 
 resetSession();

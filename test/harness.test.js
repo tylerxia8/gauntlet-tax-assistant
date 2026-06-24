@@ -15,8 +15,7 @@ function createHarness() {
     pretendToBeVisual: true,
   });
 
-  let capturedBlob = null;
-  let capturedDownload = null;
+  const downloads = [];
 
   dom.window.PDFLib = PDFLib;
   dom.window.fetch = async (url) => {
@@ -28,12 +27,12 @@ function createHarness() {
     };
   };
   dom.window.URL.createObjectURL = (blob) => {
-    capturedBlob = blob;
+    downloads.push({ blob, filename: null });
     return "blob:test-return";
   };
   dom.window.URL.revokeObjectURL = () => {};
   dom.window.HTMLAnchorElement.prototype.click = function clickDownload() {
-    capturedDownload = this.download;
+    if (downloads.length) downloads[downloads.length - 1].filename = this.download;
   };
   dom.window.eval(app);
 
@@ -56,7 +55,10 @@ function createHarness() {
       dom.window.document.querySelector("#w2Text").value = value;
     },
     downloadState() {
-      return { capturedBlob, capturedDownload };
+      return downloads[downloads.length - 1] || null;
+    },
+    downloads() {
+      return downloads;
     },
   };
 }
@@ -71,17 +73,21 @@ async function waitFor(predicate, label) {
 }
 
 async function assertPdfDownload(harness) {
+  const previousCount = harness.downloads().length;
   harness.click("#downloadReturn");
-  await waitFor(() => harness.downloadState().capturedDownload, "download link click");
-  const { capturedBlob, capturedDownload } = harness.downloadState();
-  assert.match(capturedDownload, /2025-1040-jordan-lee\.pdf/);
-  assert.equal(capturedBlob.type, "application/pdf");
+  await waitFor(() => harness.downloads().length > previousCount && harness.downloadState()?.filename, "download link click");
+  const download = harness.downloadState();
+  assert.match(download.filename, /2025-1040-jordan-lee\.pdf/);
+  assert.equal(download.blob.type, "application/pdf");
   assert.match(harness.text("#observationList"), /tool.download1040/);
 }
 
 async function testSingleFlow() {
   const harness = createHarness();
+  assert.match(harness.text(".pillar-strip"), /Stateful session initialized|phase: need_w2/);
   harness.click("#loadDemoW2");
+  harness.click("#downloadDemoW2");
+  assert.match(harness.downloadState().filename, /fake-2025-w2-jordan-lee\.json/);
   harness.click("#parseW2");
   harness.submit("single");
   harness.submit("yes");
@@ -92,9 +98,12 @@ async function testSingleFlow() {
   assert.equal(harness.dom.window.document.querySelector("#downloadReturn").disabled, false);
   assert.match(harness.text("#summaryList"), /Refund/);
   assert.match(harness.text("#observationList"), /tool.fill1040.ok/);
+  assert.match(harness.text(".pillar-strip"), /events captured/);
   assert.ok(harness.dom.window.document.querySelectorAll(".message.agent").length <= 7);
 
   await assertPdfDownload(harness);
+  harness.click("#downloadTrail");
+  assert.match(harness.downloadState().filename, /tax-assistant-observation-trail\.json/);
 }
 
 async function testMarriedJointFlowWaitsForFifthAnswer() {
@@ -151,11 +160,37 @@ function testDependentGuardrailRecovery() {
   assert.match(harness.text("#statusPill"), /1040 ready/);
 }
 
+async function testHeadOfHouseholdAmountOwed() {
+  const harness = createHarness();
+  harness.setW2(JSON.stringify({
+    taxYear: 2025,
+    employeeName: "Jordan Lee",
+    employeeSsn: "123-45-6789",
+    employeeAddress: "482 Maple Street, Dayton, OH 45402",
+    employerName: "Brightline Supply Co.",
+    employerEin: "31-1234567",
+    wages: 40250,
+    federalWithholding: 250,
+  }));
+  harness.click("#parseW2");
+  harness.submit("head of household");
+  harness.submit("yes");
+  harness.submit("yes");
+  harness.submit("no dependent, yes digital assets");
+
+  assert.match(harness.text("#summaryList"), /Head of household/);
+  assert.match(harness.text("#summaryList"), /Amount owed/);
+  assert.match(harness.text("#observationList"), /tool.fill1040.ok/);
+
+  await assertPdfDownload(harness);
+}
+
 (async () => {
   await testSingleFlow();
   await testMarriedJointFlowWaitsForFifthAnswer();
   testBadW2Rejected();
   testDependentGuardrailRecovery();
+  await testHeadOfHouseholdAmountOwed();
   console.log("Harness smoke test passed.");
 })().catch((error) => {
   console.error(error);

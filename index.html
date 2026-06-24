@@ -17,6 +17,25 @@
           <div class="status-pill" id="statusPill">Waiting for W-2</div>
         </header>
 
+        <section class="pillar-strip" aria-label="Harness pillars">
+          <article>
+            <strong>Chat loop</strong>
+            <span id="pillarChat">Stateful session initialized</span>
+          </article>
+          <article>
+            <strong>Tools</strong>
+            <span id="pillarTools">Waiting for first tool call</span>
+          </article>
+          <article>
+            <strong>Guardrails</strong>
+            <span id="pillarGuardrails">2025 fake W-2 scope enforced</span>
+          </article>
+          <article>
+            <strong>Observation</strong>
+            <span id="pillarObservation">Trail visible on the right</span>
+          </article>
+        </section>
+
         <section class="chat-panel" aria-label="Conversation">
           <div class="messages" id="messages" aria-live="polite"></div>
 
@@ -37,6 +56,7 @@
             <button id="loadDemoW2" type="button">Load fake W-2</button>
             <button id="resetSession" type="button">Reset</button>
           </div>
+          <button id="downloadDemoW2" type="button">Download fake W-2 JSON</button>
           <label for="w2Text">Paste W-2 JSON or simple key/value text</label>
           <textarea id="w2Text" rows="8" spellcheck="false"></textarea>
           <button id="parseW2" type="button">Parse W-2</button>
@@ -49,7 +69,10 @@
         </section>
 
         <section class="observations">
-          <h2>Observation Trail</h2>
+          <div class="section-heading">
+            <h2>Observation Trail</h2>
+            <button id="downloadTrail" type="button">Export</button>
+          </div>
           <ol id="observationList"></ol>
         </section>
       </aside>

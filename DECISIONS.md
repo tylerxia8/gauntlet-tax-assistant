@@ -4,6 +4,8 @@
 
 This prototype is a static browser app with a deterministic agent harness instead of an LLM. That makes the four required pillars easy to inspect: the state machine carries chat state across turns, named JavaScript tools parse the W-2 and generate the return, guardrails reject out-of-scope inputs, and the observation trail exposes every significant decision.
 
+The running app also surfaces those pillars directly above the chat. Judges can export the observation trail and fake W-2 fixture from the UI, so the harness is visible without opening developer tools.
+
 ## Tax Scope
 
 The calculation is intentionally bounded to a fake 2025 W-2 taxpayer earning roughly $40,000. It supports single, married filing jointly, and head of household; optional spouse W-2 wages for a joint return; no dependent credits; and the standard deduction. It does not itemize, handle self-employment, e-file, process real PII, or claim to be tax advice.
