@@ -204,8 +204,11 @@ function renderSummary() {
   }
   els.summary.innerHTML = rows.map(([key, value]) => `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd>`).join("");
   renderWorksheet();
-  els.download.disabled = !state.result;
-  els.downloadReturnData.disabled = !state.result;
+  const ready = Boolean(state.result);
+  els.download.setAttribute("aria-disabled", String(!ready));
+  els.downloadReturnData.setAttribute("aria-disabled", String(!ready));
+  els.download.title = ready ? "Download the filled educational 2025 Form 1040 PDF" : "Complete the W-2 chat flow first";
+  els.downloadReturnData.title = ready ? "Download the computed return data audit packet" : "Complete the W-2 chat flow first";
 }
 
 function renderWorksheet() {
@@ -898,7 +901,10 @@ function checkPdfBox(form, fieldName, checked) {
 }
 
 async function downloadReturn() {
-  if (!state.result) return;
+  if (!state.result) {
+    promptForMissingReturn("1040 PDF");
+    return;
+  }
   let blob;
   let extension = "pdf";
   try {
@@ -918,6 +924,11 @@ async function downloadReturn() {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function promptForMissingReturn(label) {
+  observe("guardrail.download.block", `Blocked ${label} download before the return was ready.`);
+  addMessage("guardrail", `I need to finish the return before I can download the ${label}. Load or paste a fake W-2, click Parse W-2, then answer the remaining chat questions.`);
 }
 
 els.form.addEventListener("submit", (event) => {
@@ -964,7 +975,10 @@ els.downloadTrail.addEventListener("click", () => {
   downloadTextFile("tax-assistant-observation-trail.json", JSON.stringify([...state.observations].reverse(), null, 2));
 });
 els.downloadReturnData.addEventListener("click", () => {
-  if (!state.result) return;
+  if (!state.result) {
+    promptForMissingReturn("return data");
+    return;
+  }
   observe("tool.downloadReturnData", "Downloaded computed return data audit packet.");
   const slug = state.w2.employeeName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   downloadTextFile(`2025-1040-${slug}-return-data.json`, JSON.stringify(buildReturnDataPacket(), null, 2));

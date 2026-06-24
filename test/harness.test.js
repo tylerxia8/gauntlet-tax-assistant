@@ -105,6 +105,9 @@ async function testSingleFlow() {
   const harness = createHarness();
   assert.match(harness.text(".pillar-strip"), /Stateful session initialized|phase: need_w2/);
   assert.match(harness.text(".fake-data-badge"), /Fake data only/);
+  harness.click("#downloadReturn");
+  assert.match(harness.text("#messages"), /finish the return/);
+  assert.match(harness.text("#observationList"), /guardrail.download.block/);
   harness.click("#loadDemoW2");
   harness.click("#downloadDemoW2");
   assert.match(harness.downloadState().filename, /fake-2025-w2-jordan-lee\.json/);
@@ -118,7 +121,7 @@ async function testSingleFlow() {
   harness.submit("no dependent, no digital assets");
 
   assert.match(harness.text("#statusPill"), /1040 ready/);
-  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").disabled, false);
+  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").getAttribute("aria-disabled"), "false");
   assert.match(harness.text("#summaryList"), /Refund/);
   assert.match(harness.text("#taxWorksheet"), /Tax worksheet/);
   assert.match(harness.text("#taxWorksheet"), /10%/);
@@ -143,7 +146,7 @@ async function testMarriedJointFlowWaitsForFifthAnswer() {
   harness.submit("yes");
 
   assert.match(harness.text("#statusPill"), /Question 5 of 5/);
-  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").disabled, true);
+  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").getAttribute("aria-disabled"), "true");
   assert.doesNotMatch(harness.text("#observationList"), /tool.fill1040.ok/);
 
   harness.submit("no one can claim me, no digital assets");
@@ -168,7 +171,7 @@ function testBadW2Rejected() {
 
   assert.match(harness.text("#messages"), /W-2 must be for tax year 2025/);
   assert.match(harness.text("#observationList"), /guardrail.w2.reject/);
-  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").disabled, true);
+  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").getAttribute("aria-disabled"), "true");
 }
 
 async function testW2FileUpload() {
