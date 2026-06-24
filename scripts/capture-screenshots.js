@@ -57,6 +57,12 @@ async function driveHappyPath(page) {
     await page.screenshot({ path: `${screenshotDir}/chat-harness.png`, fullPage: true });
     await driveHappyPath(page);
     await page.screenshot({ path: `${screenshotDir}/return-ready.png`, fullPage: true });
+
+    const mobilePage = await browser.newPage({ viewport: { width: 390, height: 1100 }, isMobile: true });
+    await mobilePage.goto(baseUrl);
+    await driveHappyPath(mobilePage);
+    await mobilePage.screenshot({ path: `${screenshotDir}/mobile-return-ready.png`, fullPage: true });
+    await mobilePage.close();
   } finally {
     await browser.close();
     if (server) server.kill();

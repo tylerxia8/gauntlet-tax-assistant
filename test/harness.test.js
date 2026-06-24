@@ -85,7 +85,21 @@ async function assertPdfDownload(harness) {
   const download = harness.downloadState();
   assert.match(download.filename, /2025-1040-jordan-lee\.pdf/);
   assert.equal(download.blob.type, "application/pdf");
+  const pdfDoc = await PDFLib.PDFDocument.load(await readBlobBytes(harness, download.blob));
+  assert.match(pdfDoc.getTitle(), /Educational 2025 Form 1040/);
+  assert.match(pdfDoc.getSubject(), /Hackathon prototype/);
+  assert.equal(pdfDoc.getPageCount(), 2);
   assert.match(harness.text("#observationList"), /tool.download1040/);
+}
+
+async function readBlobBytes(harness, blob) {
+  const browserBuffer = await new Promise((resolve, reject) => {
+    const reader = new harness.dom.window.FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsArrayBuffer(blob);
+  });
+  return new Uint8Array(browserBuffer);
 }
 
 async function assertReturnDataDownload(harness) {
@@ -122,6 +136,7 @@ async function testSingleFlow() {
   harness.submit("no dependent, no digital assets");
 
   assert.match(harness.text("#statusPill"), /1040 ready/);
+  assert.match(harness.text("#readyNotice"), /Ready to download/);
   assert.equal(harness.dom.window.document.querySelector("#downloadReturn").dataset.ready, "true");
   assert.match(harness.text("#summaryList"), /Refund/);
   assert.match(harness.text("#taxWorksheet"), /Tax worksheet/);

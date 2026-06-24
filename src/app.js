@@ -133,6 +133,7 @@ const els = {
   parseW2: document.querySelector("#parseW2"),
   summary: document.querySelector("#summaryList"),
   worksheet: document.querySelector("#taxWorksheet"),
+  readyNotice: document.querySelector("#readyNotice"),
   observations: document.querySelector("#observationList"),
   downloadTrail: document.querySelector("#downloadTrail"),
   download: document.querySelector("#downloadReturn"),
@@ -219,6 +220,8 @@ function renderSummary() {
   els.summary.innerHTML = rows.map(([key, value]) => `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd>`).join("");
   renderWorksheet();
   const ready = Boolean(state.result);
+  els.readyNotice.hidden = !ready;
+  els.readyNotice.textContent = ready ? "Ready to download: 1040 PDF and return data are available." : "";
   els.download.dataset.ready = String(ready);
   els.downloadReturnData.dataset.ready = String(ready);
   els.download.title = ready ? "Download the filled educational 2025 Form 1040 PDF" : "Complete the W-2 chat flow first";

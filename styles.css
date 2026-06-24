@@ -321,6 +321,18 @@ dl {
   padding-top: 0.8rem;
 }
 
+.ready-notice {
+  margin-top: 0.8rem;
+  border: 1px solid #b9d6cf;
+  background: #eef8f5;
+  color: var(--accent-strong);
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
 .worksheet h3 {
   margin: 0 0 0.5rem;
   font-size: 0.9rem;

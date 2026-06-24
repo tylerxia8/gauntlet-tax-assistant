@@ -17,7 +17,7 @@
             <h1>Agentic Tax-Filing Assistant</h1>
           </div>
           <div class="topbar-actions">
-            <div class="fake-data-badge">Fake data only · not for filing</div>
+            <div class="fake-data-badge">Fake data only - not for filing</div>
             <div class="status-pill" id="statusPill">Waiting for W-2</div>
           </div>
         </header>
@@ -72,6 +72,7 @@
 
         <section class="summary">
           <h2>Return Summary</h2>
+          <div class="ready-notice" id="readyNotice" hidden>Ready to download</div>
           <dl id="summaryList"></dl>
           <div class="worksheet" id="taxWorksheet" aria-live="polite"></div>
           <button id="downloadReturn" type="button" data-ready="false">Download 1040</button>
