@@ -205,8 +205,8 @@ function renderSummary() {
   els.summary.innerHTML = rows.map(([key, value]) => `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd>`).join("");
   renderWorksheet();
   const ready = Boolean(state.result);
-  els.download.setAttribute("aria-disabled", String(!ready));
-  els.downloadReturnData.setAttribute("aria-disabled", String(!ready));
+  els.download.dataset.ready = String(ready);
+  els.downloadReturnData.dataset.ready = String(ready);
   els.download.title = ready ? "Download the filled educational 2025 Form 1040 PDF" : "Complete the W-2 chat flow first";
   els.downloadReturnData.title = ready ? "Download the computed return data audit packet" : "Complete the W-2 chat flow first";
 }

@@ -121,7 +121,7 @@ async function testSingleFlow() {
   harness.submit("no dependent, no digital assets");
 
   assert.match(harness.text("#statusPill"), /1040 ready/);
-  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").getAttribute("aria-disabled"), "false");
+  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").dataset.ready, "true");
   assert.match(harness.text("#summaryList"), /Refund/);
   assert.match(harness.text("#taxWorksheet"), /Tax worksheet/);
   assert.match(harness.text("#taxWorksheet"), /10%/);
@@ -146,7 +146,7 @@ async function testMarriedJointFlowWaitsForFifthAnswer() {
   harness.submit("yes");
 
   assert.match(harness.text("#statusPill"), /Question 5 of 5/);
-  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").getAttribute("aria-disabled"), "true");
+  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").dataset.ready, "false");
   assert.doesNotMatch(harness.text("#observationList"), /tool.fill1040.ok/);
 
   harness.submit("no one can claim me, no digital assets");
@@ -171,7 +171,7 @@ function testBadW2Rejected() {
 
   assert.match(harness.text("#messages"), /W-2 must be for tax year 2025/);
   assert.match(harness.text("#observationList"), /guardrail.w2.reject/);
-  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").getAttribute("aria-disabled"), "true");
+  assert.equal(harness.dom.window.document.querySelector("#downloadReturn").dataset.ready, "false");
 }
 
 async function testW2FileUpload() {
