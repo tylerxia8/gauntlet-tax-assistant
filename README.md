@@ -31,6 +31,8 @@ Then open `http://localhost:4173`. No backend API key is required. The local ser
 
 The right panel shows the harness observation trail: chat events, tool calls, guardrail decisions, and the final form-generation action.
 
+For a fuller walkthrough, see [`JUDGE_SCRIPT.md`](./JUDGE_SCRIPT.md).
+
 Useful judge controls:
 
 - **Download fake W-2 JSON** saves the bundled test W-2 fixture.
