@@ -293,6 +293,35 @@ dl {
   margin: 0.8rem 0 0;
 }
 
+.worksheet {
+  margin-top: 0.8rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.8rem;
+}
+
+.worksheet h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.worksheet table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.worksheet th,
+.worksheet td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.35rem 0;
+  text-align: right;
+}
+
+.worksheet th:first-child,
+.worksheet td:first-child {
+  text-align: left;
+}
+
 dt {
   color: var(--muted);
 }

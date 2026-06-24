@@ -95,6 +95,9 @@ async function assertReturnDataDownload(harness) {
   const download = harness.downloadState();
   assert.match(download.filename, /2025-1040-jordan-lee-return-data\.json/);
   assert.equal(download.blob.type, "application/json");
+  const payload = JSON.parse(await download.blob.text());
+  assert.ok(payload.result.taxBreakdown.length >= 2);
+  assert.equal(payload.scope.dependentCredits, false);
   assert.match(harness.text("#observationList"), /tool.downloadReturnData/);
 }
 
@@ -113,6 +116,9 @@ async function testSingleFlow() {
   assert.match(harness.text("#statusPill"), /1040 ready/);
   assert.equal(harness.dom.window.document.querySelector("#downloadReturn").disabled, false);
   assert.match(harness.text("#summaryList"), /Refund/);
+  assert.match(harness.text("#taxWorksheet"), /Tax worksheet/);
+  assert.match(harness.text("#taxWorksheet"), /10%/);
+  assert.match(harness.text("#taxWorksheet"), /12%/);
   assert.match(harness.text("#observationList"), /tool.fill1040.ok/);
   assert.match(harness.text(".pillar-strip"), /events captured/);
   assert.ok(harness.dom.window.document.querySelectorAll(".message.agent").length <= 7);

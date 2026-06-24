@@ -112,6 +112,7 @@ const els = {
   w2Text: document.querySelector("#w2Text"),
   parseW2: document.querySelector("#parseW2"),
   summary: document.querySelector("#summaryList"),
+  worksheet: document.querySelector("#taxWorksheet"),
   observations: document.querySelector("#observationList"),
   downloadTrail: document.querySelector("#downloadTrail"),
   download: document.querySelector("#downloadReturn"),
@@ -190,8 +191,35 @@ function renderSummary() {
     rows.push([state.result.refund >= 0 ? "Refund" : "Amount owed", money(Math.abs(state.result.refund))]);
   }
   els.summary.innerHTML = rows.map(([key, value]) => `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd>`).join("");
+  renderWorksheet();
   els.download.disabled = !state.result;
   els.downloadReturnData.disabled = !state.result;
+}
+
+function renderWorksheet() {
+  if (!state.result) {
+    els.worksheet.innerHTML = "";
+    return;
+  }
+
+  const bracketRows = state.result.taxBreakdown
+    .map((row) => `
+      <tr>
+        <td>${escapeHtml(row.label)}</td>
+        <td>${money(row.amount)}</td>
+        <td>${Math.round(row.rate * 100)}%</td>
+        <td>${money(row.tax)}</td>
+      </tr>
+    `)
+    .join("");
+
+  els.worksheet.innerHTML = `
+    <h3>Tax worksheet</h3>
+    <table>
+      <thead><tr><th>Band</th><th>Income</th><th>Rate</th><th>Tax</th></tr></thead>
+      <tbody>${bracketRows}</tbody>
+    </table>
+  `;
 }
 
 function setStatus(text) {
@@ -474,14 +502,22 @@ function computeTax(status, taxableIncome) {
   let remaining = taxableIncome;
   let previousLimit = 0;
   let tax = 0;
+  const breakdown = [];
   for (const [limit, rate] of brackets) {
     const span = Math.min(remaining, limit - previousLimit);
     if (span <= 0) break;
-    tax += span * rate;
+    const rowTax = span * rate;
+    tax += rowTax;
+    breakdown.push({
+      label: limit === Infinity ? `Over ${money(previousLimit)}` : `${money(previousLimit + 1)} to ${money(limit)}`,
+      amount: span,
+      rate,
+      tax: Math.round(rowTax),
+    });
     remaining -= span;
     previousLimit = limit;
   }
-  return Math.round(tax);
+  return { tax: Math.round(tax), breakdown };
 }
 
 function finishReturn() {
@@ -490,7 +526,8 @@ function finishReturn() {
   const wages = totalWages();
   const deduction = TAX_RULES.standardDeduction[status];
   const taxableIncome = Math.max(0, wages - deduction);
-  const taxBeforeCredits = computeTax(status, taxableIncome);
+  const computedTax = computeTax(status, taxableIncome);
+  const taxBeforeCredits = computedTax.tax;
   const childCredit = 0;
   const tax = Math.max(0, taxBeforeCredits - childCredit);
   const withholding = totalWithholding();
@@ -501,6 +538,7 @@ function finishReturn() {
     deduction,
     taxableIncome,
     taxBeforeCredits,
+    taxBreakdown: computedTax.breakdown,
     childCredit,
     tax,
     withholding,

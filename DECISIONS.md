@@ -6,6 +6,8 @@ This prototype is a static browser app with a deterministic agent harness instea
 
 The running app also surfaces those pillars directly above the chat. Judges can export the observation trail and fake W-2 fixture from the UI, so the harness is visible without opening developer tools.
 
+The tax calculation exposes a bracket-by-bracket worksheet in the UI and in the return-data JSON. That keeps the computation auditable while staying within the deliberately narrow W-2-only scope.
+
 ## Tax Scope
 
 The calculation is intentionally bounded to a fake 2025 W-2 taxpayer earning roughly $40,000. It supports single, married filing jointly, and head of household; optional spouse W-2 wages for a joint return; no dependent credits; and the standard deduction. It does not itemize, handle self-employment, e-file, process real PII, or claim to be tax advice.

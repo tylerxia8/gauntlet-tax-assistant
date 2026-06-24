@@ -40,6 +40,7 @@ Useful judge controls:
 - **Download return data** saves the computed values, answers, scope flags, and observation trail after the return is ready.
 - **Export** in the observation panel saves the full event trail as JSON.
 - The four-pillar strip above the chat shows live harness state for chat loop, tools, guardrails, and observation.
+- The return summary includes a bracket-by-bracket tax worksheet once the 1040 is ready.
 
 ## Deployment
 
