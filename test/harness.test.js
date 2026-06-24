@@ -54,6 +54,12 @@ function createHarness() {
     setW2(value) {
       dom.window.document.querySelector("#w2Text").value = value;
     },
+    uploadW2(filename, text, type = "application/json") {
+      const input = dom.window.document.querySelector("#w2File");
+      const file = new dom.window.File([text], filename, { type });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      input.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    },
     downloadState() {
       return downloads[downloads.length - 1] || null;
     },
@@ -155,6 +161,24 @@ function testBadW2Rejected() {
   assert.equal(harness.dom.window.document.querySelector("#downloadReturn").disabled, true);
 }
 
+async function testW2FileUpload() {
+  const harness = createHarness();
+  harness.uploadW2("uploaded-w2.json", JSON.stringify({
+    taxYear: 2025,
+    employeeName: "Jordan Lee",
+    employeeSsn: "123-45-6789",
+    employeeAddress: "482 Maple Street, Dayton, OH 45402",
+    employerName: "Brightline Supply Co.",
+    employerEin: "31-1234567",
+    wages: 40250,
+    federalWithholding: 3450,
+  }));
+
+  await waitFor(() => harness.text("#observationList").includes("fixture.upload"), "W-2 upload observation");
+  harness.click("#parseW2");
+  assert.match(harness.text("#messages"), /I found Jordan Lee's W-2/);
+}
+
 function testDependentGuardrailRecovery() {
   const harness = createHarness();
   harness.click("#loadDemoW2");
@@ -200,6 +224,7 @@ async function testHeadOfHouseholdAmountOwed() {
   await testSingleFlow();
   await testMarriedJointFlowWaitsForFifthAnswer();
   testBadW2Rejected();
+  await testW2FileUpload();
   testDependentGuardrailRecovery();
   await testHeadOfHouseholdAmountOwed();
   console.log("Harness smoke test passed.");

@@ -107,6 +107,7 @@ const els = {
   status: document.querySelector("#statusPill"),
   loadDemoW2: document.querySelector("#loadDemoW2"),
   downloadDemoW2: document.querySelector("#downloadDemoW2"),
+  w2File: document.querySelector("#w2File"),
   reset: document.querySelector("#resetSession"),
   w2Text: document.querySelector("#w2Text"),
   parseW2: document.querySelector("#parseW2"),
@@ -243,6 +244,26 @@ function downloadTextFile(filename, text, type = "application/json") {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function loadW2File(file) {
+  if (!file) return;
+  if (!/\.(json|txt)$/i.test(file.name) && !/json|text/.test(file.type)) {
+    observe("guardrail.file.reject", "Rejected W-2 upload with unsupported file type.");
+    addMessage("guardrail", "Please upload a fake W-2 as a .json or .txt file.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    els.w2Text.value = String(reader.result || "");
+    observe("fixture.upload", `Loaded fake W-2 upload: ${file.name}.`);
+  });
+  reader.addEventListener("error", () => {
+    observe("guardrail.file.reject", `Could not read uploaded file: ${file.name}.`);
+    addMessage("guardrail", "I couldn't read that file. Please paste the W-2 text instead.");
+  });
+  reader.readAsText(file);
 }
 
 function buildReturnDataPacket() {
@@ -683,6 +704,10 @@ els.loadDemoW2.addEventListener("click", () => {
 els.downloadDemoW2.addEventListener("click", () => {
   observe("fixture.download", "Downloaded fake W-2 JSON fixture.");
   downloadTextFile("fake-2025-w2-jordan-lee.json", JSON.stringify(DEMO_W2, null, 2));
+});
+
+els.w2File.addEventListener("change", () => {
+  loadW2File(els.w2File.files?.[0]);
 });
 
 els.parseW2.addEventListener("click", () => {

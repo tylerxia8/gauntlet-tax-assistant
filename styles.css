@@ -27,7 +27,8 @@ body {
 }
 
 button,
-textarea {
+textarea,
+input {
   font: inherit;
 }
 
@@ -59,6 +60,15 @@ textarea {
   padding: 0.75rem;
   color: var(--ink);
   background: #fff;
+}
+
+input[type="file"] {
+  width: 100%;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 0.65rem;
+  background: #fff;
+  color: var(--muted);
 }
 
 .shell {
