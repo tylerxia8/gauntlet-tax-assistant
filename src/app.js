@@ -67,11 +67,14 @@ const IRS_1040_FIELDS = {
   statusSingle: "topmostSubform[0].Page1[0].Checkbox_ReadOrder[0].c1_8[0]",
   statusMarriedJoint: "topmostSubform[0].Page1[0].Checkbox_ReadOrder[0].c1_8[1]",
   statusHeadOfHousehold: "topmostSubform[0].Page1[0].c1_8[0]",
+  digitalAssetsYes: "topmostSubform[0].Page1[0].c1_10[0]",
+  digitalAssetsNo: "topmostSubform[0].Page1[0].c1_10[1]",
   wages: "topmostSubform[0].Page1[0].f1_47[0]",
   totalIncome: "topmostSubform[0].Page1[0].f1_70[0]",
   agi: "topmostSubform[0].Page1[0].f1_72[0]",
   standardDeduction: "topmostSubform[0].Page1[0].f1_73[0]",
   taxableIncome: "topmostSubform[0].Page1[0].f1_75[0]",
+  taxpayerClaimedAsDependent: "topmostSubform[0].Page2[0].c2_1[0]",
   tax: "topmostSubform[0].Page2[0].f2_01[0]",
   taxAfterCredits: "topmostSubform[0].Page2[0].f2_08[0]",
   w2Withholding: "topmostSubform[0].Page2[0].f2_17[0]",
@@ -92,6 +95,7 @@ const state = {
     address: null,
     dependents: null,
     canBeClaimed: null,
+    digitalAssets: null,
   },
   result: null,
   observations: [],
@@ -195,6 +199,7 @@ function resetSession() {
     address: null,
     dependents: null,
     canBeClaimed: null,
+    digitalAssets: null,
   };
   state.result = null;
   state.observations = [];
@@ -304,12 +309,12 @@ function nextPrompt() {
   }
   if (state.answers.dependents === null) {
     setStatus(`Question ${state.questionCount + 1} of 5`);
-    ask("How many qualifying child dependents should I include for this simple return? Use 0 if none.", "ask_dependents");
+    ask("For this simple W-2-only prototype, I can only file a clean 1040 with no dependent credits. Should I continue with 0 dependents? Please answer yes or no.", "ask_dependents");
     return;
   }
-  if (state.answers.canBeClaimed === null) {
+  if (state.answers.canBeClaimed === null || state.answers.digitalAssets === null) {
     setStatus(`Question ${state.questionCount + 1} of 5`);
-    ask("Last check: can someone else claim this taxpayer as a dependent? Please answer yes or no.", "ask_claimed");
+    ask("Last check: can someone else claim this taxpayer as a dependent, and did they have digital asset activity in 2025? A reply like `no dependent, no digital assets` is perfect.", "ask_final_checks");
     return;
   }
   finishReturn();
@@ -343,12 +348,15 @@ function handleUserMessage(text) {
     } else if (state.phase === "ask_address") {
       state.answers.address = /^yes|use|w-?2|same/i.test(normalized) ? state.w2.employeeAddress : normalized;
     } else if (state.phase === "ask_dependents") {
-      const count = Number(normalized.match(/\d+/)?.[0] || 0);
-      if (count < 0 || count > 3) throw new Error("This prototype supports 0 to 3 child dependents.");
-      state.answers.dependents = count;
-    } else if (state.phase === "ask_claimed") {
-      if (!/^(yes|no|y|n)\b/i.test(normalized)) throw new Error("Please answer yes or no.");
-      state.answers.canBeClaimed = /^y/i.test(normalized);
+      if (/^(yes|y|0|none|no dependents)\b/i.test(normalized)) {
+        state.answers.dependents = 0;
+      } else {
+        throw new Error("Dependent credits need full dependent details and Schedule 8812 support. This prototype keeps the return valid by supporting 0 dependents only.");
+      }
+    } else if (state.phase === "ask_final_checks") {
+      const checks = parseFinalChecks(normalized);
+      state.answers.canBeClaimed = checks.canBeClaimed;
+      state.answers.digitalAssets = checks.digitalAssets;
     }
     nextPrompt();
   } catch (error) {
@@ -374,6 +382,19 @@ function parseMoneyPair(text) {
   if (wages < 0 || wages > 60000) throw new Error("Spouse wages must be between $0 and $60,000 for this prototype.");
   if (withholding < 0 || withholding > wages * 0.35) throw new Error("Spouse withholding looks outside the allowed range.");
   return { wages, withholding };
+}
+
+function parseFinalChecks(text) {
+  const value = text.toLowerCase();
+  const dependentMention = value.match(/(dependent|claim)/);
+  const digitalMention = value.match(/(digital|crypto|virtual|asset)/);
+  if (!dependentMention || !digitalMention) {
+    throw new Error("Please answer both parts, for example: `no dependent, no digital assets`.");
+  }
+
+  const canBeClaimed = !/(no|not|cannot|can't)\s+(as\s+a\s+)?(dependent|claim)|no\s+dependent/.test(value);
+  const digitalAssets = !/(no|none|not|without)\s+(digital|crypto|virtual|asset)/.test(value);
+  return { canBeClaimed, digitalAssets };
 }
 
 function totalWages() {
@@ -406,7 +427,7 @@ function finishReturn() {
   const deduction = TAX_RULES.standardDeduction[status];
   const taxableIncome = Math.max(0, wages - deduction);
   const taxBeforeCredits = computeTax(status, taxableIncome);
-  const childCredit = Math.min(taxBeforeCredits, state.answers.dependents * TAX_RULES.childTaxCredit);
+  const childCredit = 0;
   const tax = Math.max(0, taxBeforeCredits - childCredit);
   const withholding = totalWithholding();
   state.result = {
@@ -515,6 +536,9 @@ async function buildReturnPdfBytes() {
   checkPdfBox(form, IRS_1040_FIELDS.statusSingle, r.status === "single");
   checkPdfBox(form, IRS_1040_FIELDS.statusMarriedJoint, r.status === "married_joint");
   checkPdfBox(form, IRS_1040_FIELDS.statusHeadOfHousehold, r.status === "head_of_household");
+  checkPdfBox(form, IRS_1040_FIELDS.digitalAssetsYes, state.answers.digitalAssets === true);
+  checkPdfBox(form, IRS_1040_FIELDS.digitalAssetsNo, state.answers.digitalAssets === false);
+  checkPdfBox(form, IRS_1040_FIELDS.taxpayerClaimedAsDependent, state.answers.canBeClaimed === true);
 
   setPdfMoney(form, IRS_1040_FIELDS.wages, r.wages);
   setPdfMoney(form, IRS_1040_FIELDS.totalIncome, r.wages);

@@ -10,9 +10,11 @@ const fields = {
   lastName: "topmostSubform[0].Page1[0].f1_15[0]",
   ssn: "topmostSubform[0].Page1[0].f1_16[0]",
   statusSingle: "topmostSubform[0].Page1[0].Checkbox_ReadOrder[0].c1_8[0]",
+  digitalAssetsNo: "topmostSubform[0].Page1[0].c1_10[1]",
   wages: "topmostSubform[0].Page1[0].f1_47[0]",
   agi: "topmostSubform[0].Page1[0].f1_72[0]",
   taxableIncome: "topmostSubform[0].Page1[0].f1_75[0]",
+  taxpayerClaimedAsDependent: "topmostSubform[0].Page2[0].c2_1[0]",
   tax: "topmostSubform[0].Page2[0].f2_01[0]",
   withholding: "topmostSubform[0].Page2[0].f2_17[0]",
   refund: "topmostSubform[0].Page2[0].f2_31[0]",
@@ -29,6 +31,8 @@ const fields = {
   form.getTextField(fields.lastName).setText("Lee");
   form.getTextField(fields.ssn).setText("123456789");
   form.getCheckBox(fields.statusSingle).check();
+  form.getCheckBox(fields.digitalAssetsNo).check();
+  form.getCheckBox(fields.taxpayerClaimedAsDependent).uncheck();
   form.getTextField(fields.wages).setText("40250");
   form.getTextField(fields.agi).setText("40250");
   form.getTextField(fields.taxableIncome).setText("24500");
