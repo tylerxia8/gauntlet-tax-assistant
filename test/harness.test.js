@@ -104,6 +104,7 @@ async function assertReturnDataDownload(harness) {
 async function testSingleFlow() {
   const harness = createHarness();
   assert.match(harness.text(".pillar-strip"), /Stateful session initialized|phase: need_w2/);
+  assert.match(harness.text(".fake-data-badge"), /Fake data only/);
   harness.click("#loadDemoW2");
   harness.click("#downloadDemoW2");
   assert.match(harness.downloadState().filename, /fake-2025-w2-jordan-lee\.json/);

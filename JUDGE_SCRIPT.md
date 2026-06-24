@@ -8,11 +8,11 @@ Use the live app at `https://tylerxia8.github.io/gauntlet-tax-assistant/`.
 2. Click **Parse W-2**.
 3. Answer:
    - `single`
-   - `0`
+   - `yes`
    - `0`
    - `no dependent, no digital assets`
 4. Confirm the status changes to **1040 ready**.
-5. Click **Download 1040** and verify a filled PDF downloads.
+5. Click **Download 1040** and verify a filled PDF downloads with a visible fake-data/not-for-filing footer.
 6. Click **Download return data** to inspect the computed audit packet.
 7. Click **Export** in the observation trail to inspect the event log.
 8. Click **Download fake W-2 preview** to inspect the visual source W-2 artifact.

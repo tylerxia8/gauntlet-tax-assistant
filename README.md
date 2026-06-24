@@ -7,6 +7,19 @@ A small static web app for the Gauntlet hackathon challenge: a web-based chat th
 - App: `https://tylerxia8.github.io/gauntlet-tax-assistant/`
 - Source: `https://github.com/tylerxia8/gauntlet-tax-assistant`
 
+## Quick Demo
+
+1. Click **Load fake W-2**, then **Parse W-2**.
+2. Reply `single`, `yes`, `0`, then `no dependent, no digital assets`.
+3. Confirm **1040 ready**, review the worksheet, and click **Download 1040**.
+4. The generated PDF is visibly stamped as fake-data educational output and not for filing.
+
+## Screenshots
+
+![Chat harness with fake W-2 controls](./screenshots/chat-harness.png)
+
+![Completed return with worksheet and observation trail](./screenshots/return-ready.png)
+
 ## Local Run
 
 Serve the folder:
@@ -68,4 +81,4 @@ The included `render.yaml` captures the same static deployment settings.
 
 ## Scope
 
-This is an educational hackathon prototype only. It uses fake W-2 data, performs a bounded 2025 federal W-2-only calculation with no dependent credits, and does not provide tax advice, e-file, or handle real PII. The PDF template is the IRS Form 1040 downloaded from `https://www.irs.gov/pub/irs-pdf/f1040.pdf`.
+This is an educational hackathon prototype only. It uses fake W-2 data, performs a bounded 2025 federal W-2-only calculation, supports zero or one qualifying child under simplified assumptions, and does not provide tax advice, e-file, or handle real PII. The PDF template is the IRS Form 1040 downloaded from `https://www.irs.gov/pub/irs-pdf/f1040.pdf`.

@@ -103,6 +103,26 @@ input[type="file"] {
   border-bottom: 1px solid var(--line);
 }
 
+.topbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.fake-data-badge {
+  flex: 0 1 auto;
+  border: 1px solid #efc88f;
+  color: var(--warn);
+  background: #fff8ec;
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .eyebrow {
   margin: 0 0 0.2rem;
   color: var(--muted);
@@ -365,6 +385,15 @@ li strong {
 
   .pillar-strip {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar-actions {
+    justify-content: flex-start;
   }
 
   .side-panel {

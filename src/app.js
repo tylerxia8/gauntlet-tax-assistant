@@ -827,8 +827,22 @@ async function buildReturnPdfBytes() {
 
   form.updateFieldAppearances(font);
   form.flatten();
+  stampPdfDisclaimer(pdfDoc, font);
   observe("tool.fillPdf.ok", "Populated and flattened official IRS 2025 Form 1040 fields.");
   return pdfDoc.save();
+}
+
+function stampPdfDisclaimer(pdfDoc, font) {
+  const color = window.PDFLib.rgb(0.58, 0.12, 0.12);
+  for (const page of pdfDoc.getPages()) {
+    page.drawText("EDUCATIONAL PROTOTYPE - FAKE DATA ONLY - NOT FOR FILING", {
+      x: 42,
+      y: 16,
+      size: 8,
+      font,
+      color,
+    });
+  }
 }
 
 function fillDependentFields(form, dependent) {
