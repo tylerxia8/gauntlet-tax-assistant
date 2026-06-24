@@ -5,6 +5,7 @@ A small static web app for the Gauntlet hackathon challenge: a web-based chat th
 ## Live Demo
 
 - App: `https://tylerxia8.github.io/gauntlet-tax-assistant/`
+- Render: `https://gauntlet-tax-assistant.onrender.com`
 - Source: `https://github.com/tylerxia8/gauntlet-tax-assistant`
 - Render one-click: [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/tylerxia8/gauntlet-tax-assistant/tree/master)
 
