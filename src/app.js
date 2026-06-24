@@ -35,7 +35,6 @@ const TAX_RULES = {
       [Infinity, 0.37],
     ],
   },
-  childTaxCredit: 2000,
 };
 
 const DEMO_W2 = {
@@ -161,7 +160,7 @@ function renderObservations() {
 function renderSummary() {
   const rows = [];
   if (state.w2) {
-    rows.push(["Wages", money(state.w2.wages)]);
+    rows.push(["Wages", money(totalWages())]);
     rows.push(["Withholding", money(totalWithholding())]);
   }
   if (state.answers.filingStatus) {
@@ -211,7 +210,7 @@ function resetSession() {
   observe("session.start", "Initialized stateful chat loop with a five-question cap.");
   addMessage(
     "agent",
-    "Hi, I can help create an educational 2025 federal Form 1040 from a fake W-2. Load the sample W-2 or paste one on the right, and I’ll keep us under five questions."
+    "Hi, I can help create an educational 2025 federal Form 1040 from a fake W-2. Load the sample W-2 or paste one on the right, and I'll keep us under five questions."
   );
 }
 
@@ -277,11 +276,6 @@ function ask(text, phase) {
   state.questionCount += 1;
   observe("chat.ask", `Question ${state.questionCount}/5: ${text}`);
   addMessage("agent", text);
-  if (state.questionCount >= 5 && !["ready", "complete"].includes(state.phase)) {
-    state.phase = "ready";
-    observe("guardrail.question_budget", "Question budget reached; moving to best-effort return generation.");
-    finishReturn();
-  }
 }
 
 function nextPrompt() {
@@ -392,7 +386,7 @@ function parseFinalChecks(text) {
     throw new Error("Please answer both parts, for example: `no dependent, no digital assets`.");
   }
 
-  const canBeClaimed = !/(no|not|cannot|can't)\s+(as\s+a\s+)?(dependent|claim)|no\s+dependent/.test(value);
+  const canBeClaimed = !/(no\s+one\s+can\s+claim|no|not|cannot|can't)\s+(me\s+)?(as\s+a\s+)?(dependent|claim)|no\s+dependent/.test(value);
   const digitalAssets = !/(no|none|not|without)\s+(digital|crypto|virtual|asset)/.test(value);
   return { canBeClaimed, digitalAssets };
 }
@@ -641,7 +635,7 @@ els.parseW2.addEventListener("click", () => {
   try {
     state.w2 = parseW2Text(els.w2Text.value);
     state.phase = "ready_for_questions";
-    addMessage("agent", "Thanks, I’ve got the W-2. I’ll ask only what’s needed to finish the simple federal return.");
+    addMessage("agent", "Thanks, I've got the W-2. I'll ask only what's needed to finish the simple federal return.");
     nextPrompt();
     renderSummary();
   } catch (error) {
