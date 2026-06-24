@@ -114,6 +114,7 @@ const els = {
   observations: document.querySelector("#observationList"),
   downloadTrail: document.querySelector("#downloadTrail"),
   download: document.querySelector("#downloadReturn"),
+  downloadReturnData: document.querySelector("#downloadReturnData"),
   pillarChat: document.querySelector("#pillarChat"),
   pillarTools: document.querySelector("#pillarTools"),
   pillarGuardrails: document.querySelector("#pillarGuardrails"),
@@ -189,6 +190,7 @@ function renderSummary() {
   }
   els.summary.innerHTML = rows.map(([key, value]) => `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd>`).join("");
   els.download.disabled = !state.result;
+  els.downloadReturnData.disabled = !state.result;
 }
 
 function setStatus(text) {
@@ -241,6 +243,24 @@ function downloadTextFile(filename, text, type = "application/json") {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function buildReturnDataPacket() {
+  return {
+    generatedAt: new Date().toISOString(),
+    scope: {
+      taxYear: TAX_YEAR,
+      prototype: true,
+      realFiling: false,
+      taxAdvice: false,
+      supportedIncome: "single fake W-2, optional spouse W-2 wages for joint filing",
+      dependentCredits: false,
+    },
+    w2: state.w2,
+    answers: state.answers,
+    result: state.result,
+    observations: [...state.observations].reverse(),
+  };
 }
 
 function parseW2Text(text) {
@@ -681,6 +701,12 @@ els.reset.addEventListener("click", resetSession);
 els.downloadTrail.addEventListener("click", () => {
   observe("observation.export", "Exported observation trail as JSON.");
   downloadTextFile("tax-assistant-observation-trail.json", JSON.stringify([...state.observations].reverse(), null, 2));
+});
+els.downloadReturnData.addEventListener("click", () => {
+  if (!state.result) return;
+  observe("tool.downloadReturnData", "Downloaded computed return data audit packet.");
+  const slug = state.w2.employeeName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  downloadTextFile(`2025-1040-${slug}-return-data.json`, JSON.stringify(buildReturnDataPacket(), null, 2));
 });
 els.download.addEventListener("click", downloadReturn);
 

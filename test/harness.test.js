@@ -82,6 +82,16 @@ async function assertPdfDownload(harness) {
   assert.match(harness.text("#observationList"), /tool.download1040/);
 }
 
+async function assertReturnDataDownload(harness) {
+  const previousCount = harness.downloads().length;
+  harness.click("#downloadReturnData");
+  await waitFor(() => harness.downloads().length > previousCount && harness.downloadState()?.filename, "return data download");
+  const download = harness.downloadState();
+  assert.match(download.filename, /2025-1040-jordan-lee-return-data\.json/);
+  assert.equal(download.blob.type, "application/json");
+  assert.match(harness.text("#observationList"), /tool.downloadReturnData/);
+}
+
 async function testSingleFlow() {
   const harness = createHarness();
   assert.match(harness.text(".pillar-strip"), /Stateful session initialized|phase: need_w2/);
@@ -102,6 +112,7 @@ async function testSingleFlow() {
   assert.ok(harness.dom.window.document.querySelectorAll(".message.agent").length <= 7);
 
   await assertPdfDownload(harness);
+  await assertReturnDataDownload(harness);
   harness.click("#downloadTrail");
   assert.match(harness.downloadState().filename, /tax-assistant-observation-trail\.json/);
 }

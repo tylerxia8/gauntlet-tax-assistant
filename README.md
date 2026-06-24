@@ -34,6 +34,7 @@ The right panel shows the harness observation trail: chat events, tool calls, gu
 Useful judge controls:
 
 - **Download fake W-2 JSON** saves the bundled test W-2 fixture.
+- **Download return data** saves the computed values, answers, scope flags, and observation trail after the return is ready.
 - **Export** in the observation panel saves the full event trail as JSON.
 - The four-pillar strip above the chat shows live harness state for chat loop, tools, guardrails, and observation.
 
